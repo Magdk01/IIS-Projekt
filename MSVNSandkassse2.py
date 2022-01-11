@@ -35,9 +35,9 @@ if __name__ == '__main__':
 
 
 
+    file_list = ['Vibrant.jpg', 'landscape2.jpg','landscape.jpg','CarWorld-16.jpg','rollercoaster.jpg']
 
-    filename = ('landscape2.jpg')
-    filename2 = ('CarWorld-16.jpg')
+    filename = file_list[1]
 
     image1 = imread(filename)
 
@@ -69,11 +69,7 @@ if __name__ == '__main__':
 
 
 
-    image3 = imread(filename2)
-    image3 = rgb2lab(image3).astype('float32')
-    image3 = image3 = image3[...,0]
-    image3 = transform(image3)
-    image3 = torch.unsqueeze(image3, 0)
+
 
 
 
@@ -83,14 +79,17 @@ if __name__ == '__main__':
         def __init__(self):
             super().__init__()
             self.model = nn.Sequential(
-                nn.Conv2d(1, 255, 1, padding='same'),
+                nn.Conv2d(1, 512, 1, padding='same'),
                 nn.ReLU(),
-                # nn.BatchNorm2d(255),
-                nn.Conv2d(255, 50, 1, padding='same'),
-
-                nn.Conv2d(50, 25, 1, padding='same'),
+                nn.BatchNorm2d(512),
+                nn.Conv2d(512, 128, 1, padding='same'),
                 nn.ReLU(),
-                nn.Conv2d(25, 3, 1, padding='same'))
+                nn.BatchNorm2d(128),
+                nn.Conv2d(128, 64, 1, padding='same'),
+                nn.ReLU(),
+                nn.BatchNorm2d(64),
+                nn.Conv2d(64, 3, 1, padding='same')
+                )
 
         def forward(self, input):
             return self.model(input)
@@ -101,9 +100,10 @@ if __name__ == '__main__':
     criterion = nn.MSELoss()
     # optimizer = torch.optim.SGD(gen.parameters(), lr=0.0001, momentum=0.5)
     optimizer = torch.optim.Adam(gen.parameters(),lr = 0.0001)
-    epochs = 30000
 
-    for epoch in range(epochs):
+    reruns = 10000
+
+    for epoch in range(reruns):
 
         optimizer.zero_grad()
 
@@ -122,39 +122,54 @@ if __name__ == '__main__':
 
     new = gen.forward(image1_grayscale.to(device))
 
-    newdiff = gen.forward(image3.to(device))
-
-
-
     img = image1_grayscale_for_display
-    img = np.transpose(img,(1,2,0))
+    img = np.transpose(img, (1, 2, 0))
 
     img2 = torch.squeeze(new)
     img2 = img2.cpu()
     img2 = img2.detach().numpy()
-    img2 = np.transpose(img2,(1,2,0))
+    img2 = np.transpose(img2, (1, 2, 0))
     img2 = lab2rgb(img2)
 
 
-    img3 = torch.squeeze(newdiff)
-    img3 = img3.cpu()
-    img3 = img3.detach().numpy()
-    img3 = np.transpose(img3,(1,2,0))
-    img3 = lab2rgb(img3)
-
-
     rows = 1
-    columns = 3
+    columns = 2
     fig = plt.figure(figsize=(10, 7))
     fig.add_subplot(rows, columns, 1)
-    plt.imshow(img,cmap='gray')
+    plt.imshow(img, cmap='gray')
     plt.title('Original')
     fig.add_subplot(rows, columns, 2)
     plt.imshow(img2)
     plt.title('Generated')
-    fig.add_subplot(rows, columns, 3)
-    plt.imshow(img3)
-    plt.title('new')
-
-
     plt.show()
+
+
+    genfig = plt.figure(figsize=(10,7))
+    for index, filename2 in enumerate(file_list):
+        generated_image = imread(filename2)
+        generated_image = rgb2lab(generated_image).astype('float32')
+        generated_image = generated_image = generated_image[..., 0]
+        generated_image = transform(generated_image)
+        generated_image = torch.unsqueeze(generated_image, 0)
+        gened_img3 = gen.forward(generated_image.to(device))
+
+        GenImg_p2 = torch.squeeze(gened_img3)
+        GenImg_p2 = GenImg_p2.cpu()
+        GenImg_p2 = GenImg_p2.detach().numpy()
+        GenImg_p2 = np.transpose(GenImg_p2, (1, 2, 0))
+        GenImg_p2 = lab2rgb(GenImg_p2)
+
+        genfig.add_subplot(1,len(file_list),index+1)
+        plt.imshow(GenImg_p2)
+    plt.show()
+
+
+
+
+
+
+
+
+
+
+
