@@ -28,7 +28,7 @@ if __name__ == '__main__':
         [transforms.Grayscale()]
     )
 
-    batch_size = 8
+    batch_size = 1
 
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=False, transform=transform)
@@ -50,69 +50,37 @@ if __name__ == '__main__':
     dataiter = (iter(trainloader))
     images, labels = dataiter.next()
 
-    input_images = transforms.Grayscale(3)(images)
+    original_set_tensor = images
+    original_set_numpy = original_set_tensor.numpy()
+    original_set_numpy = np.transpose(original_set_numpy, (2, 3, 0, 1))
+    original_set_lab = rgb2lab(original_set_numpy)
+    copy_of_lab = np.copy(original_set_lab).astype('float32')
+    copy_of_lab = np.transpose(copy_of_lab, (2, 3, 0, 1))
+    copy_of_lab = copy_of_lab[:,0]
+    copy_of_lab = torch.from_numpy(copy_of_lab.astype('float32'))
+    copy_of_lab = torch.unsqueeze(copy_of_lab,1)
 
     fig = plt.figure(figsize=(10, 7))
+
     for index in range(batch_size):
-        disp_images = transforms.ToPILImage()(images[index])
         fig.add_subplot(3, batch_size, index + 1)
         # plt.title(f'Original{index + 1}')
         plt.axis('off')
-        plt.imshow(disp_images)
+        plt.imshow(original_set_numpy[:,:,index])
 
     for index in range(batch_size):
-        disp_images = transforms.ToPILImage()(input_images[index])
         fig.add_subplot(3, batch_size, batch_size + index + 1)
         # plt.title(f'GRSC{index+1}')
         plt.axis('off')
-        plt.imshow(disp_images)
+        plt.imshow(original_set_numpy[:,:,index,0],cmap='gray')
 
-    filename = ('landscape2.jpg')
-    filename2 = ('CarWorld-16.jpg')
-
-    image2 = Image.open(filename).convert('RGB')
-    image2grsc = image2.convert('L')
-    image2grsc = image2grsc.convert('RGB')
-
-    image2 = transform(image2)
-    image2grsc = transform(image2grsc)
-
-    image2 = torch.unsqueeze(image2, 0)
-    image2grsc = torch.unsqueeze(image2grsc, 0)
-
-
-    # print(images)
-
-    # filename = ('landscape2.jpg')
-    # filename2 = ('CarWorld-16.jpg')
-
-    # image1 = Image.open(filename).convert('RGB')
-    # image2grsc = image1.convert('L')
-    #
-    # image2grsc = image1.convert('L')
-    # image2grsc = image2grsc.convert('RGB')
-    #
-    #
-    # image1 = transform(image1)
-    # image2grsc = transform(image2grsc)
-    #
-    # image1 = torch.unsqueeze(image1, 0)
-    # image2grsc = torch.unsqueeze(image2grsc, 0)
-    #
-    # images = image1
-
-    # image3 = Image.open(filename2).convert('RGB')
-    # image3 = transform(image3)
-    # image3 = torch.unsqueeze(image3, 0)
-    #
-    # img = transforms.ToPILImage()((image2grsc[0]))
 
     class Generator(nn.Module):
 
         def __init__(self):
             super().__init__()
             self.model = nn.Sequential(
-                nn.Conv2d(3, 255, 1, padding='same'),
+                nn.Conv2d(1, 255, 1, padding='same'),
                 nn.ReLU(),
                 nn.BatchNorm2d(255),
                 nn.Conv2d(255, 50, 1, padding='same'),
@@ -130,52 +98,36 @@ if __name__ == '__main__':
 
     criterion = nn.MSELoss()
     # optimizer = torch.optim.SGD(gen.parameters(), lr=learning_rate, momentum=0.5)
-    optimizer = torch.optim.Adam(gen.parameters(),lr =learning_rate)
+    optimizer = torch.optim.Adam(gen.parameters(),lr = learning_rate)
 
 
-    # pre_epochs = 20000
-    #
-    # for epoch in range(pre_epochs):
-    #
-    #     optimizer.zero_grad()
-    #
-    #     output = gen(image2grsc.to(device))
-    #
-    #     loss = criterion(output, image2.to(device))
-    #
-    #     loss.backward()
-    #
-    #     optimizer.step()
-    #
-    #     if epoch % 500 == 0:
-    #         print(f'Epoch = {epoch},  Loss: {loss.item()}')
-
-    # fig2 = plt.figure(figsize=(10, 7))
-    # for index in range(batch_size):
-    #     disppreepoch_images = transforms.ToPILImage()(pre_trained[index])
-    #     fig2.add_subplot(1, batch_size, 1 + index)
-    #     # plt.title(f'Generated{index+1}')
-    #     plt.axis('off')
-    #     plt.imshow(disppreepoch_images)
-    # plt.show()
-
-
-
-    epochs = 10
+    epochs = 1
 
     for epoch in range(epochs):
 
         for i, data in enumerate(trainloader):
 
             inp_img, labels = data
-            fuckmig = inp_img
-            haderprogrammering = transforms.Grayscale(3)(inp_img)
+
+            original_set_tensor = inp_img
+            original_set_numpy = original_set_tensor.numpy()
+            original_set_numpy = np.transpose(original_set_numpy, (2, 3, 0, 1))
+            original_set_lab = rgb2lab(original_set_numpy)
+            new_set_lab = np.transpose(original_set_lab, (2, 3, 0, 1))
+            lab_grayscale = np.copy(new_set_lab)
+            lab_grayscale = lab_grayscale[:,0]
+
+            lab_grayscale = torch.from_numpy(lab_grayscale.astype('float32'))
+            lab_grayscale = torch.unsqueeze(lab_grayscale, 1)
+
+            lab_target = torch.from_numpy(new_set_lab.astype('float32'))
+
 
             optimizer.zero_grad()
 
-            output = gen(haderprogrammering.to(device))
+            output = gen(lab_grayscale.to(device))
 
-            loss = criterion(output, fuckmig.to(device))
+            loss = criterion(output, lab_target.to(device))
 
             loss.backward()
 
@@ -184,56 +136,28 @@ if __name__ == '__main__':
             if i % 500 == 0:
                 print(f'Epoch = {epoch}, I = {i},  Loss: {loss.item()}')
 
-        epoch_images = gen(input_images.to(device))
-
-        fig3 = plt.figure(figsize=(10, 7))
-
-        for index in range(batch_size):
-            dispepoch_images = transforms.ToPILImage()(epoch_images[index])
-            fig3.add_subplot(1, batch_size,1+index)
-            # plt.title(f'Generated{index+1}')
-            plt.axis('off')
-            plt.imshow(dispepoch_images)
-        plt.show()
 
 
-    # new_images = gen.forward(input_images.to(device))
-    #
-    # for index in range(batch_size):
-    #     disp_images = transforms.ToPILImage()(new_images[index])
-    #     fig.add_subplot(3, batch_size, batch_size * 2 + index + 1)
-    #     # plt.title(f'Generated{index+1}')
-    #     plt.axis('off')
-    #     plt.imshow(disp_images)
-    #
-    # plt.show()
+    epoch_images = gen(copy_of_lab.to(device))
+
+    epoch_images = epoch_images.cpu()
+    epoch_images = epoch_images.detach().numpy()
+
+
+    for index in range(batch_size):
+        fig.add_subplot(3, batch_size, batch_size*2 + index + 1)
+        # plt.title(f'GRSC{index+1}')
+        plt.axis('off')
+        img_slice = epoch_images[index]
+        print_img = np.transpose(img_slice,(1,2,0))
+        plt.imshow(lab2rgb(print_img))
+    plt.show()
 
 
 
 
 
-    # imshow(torchvision.utils.make_grid(new_images))
 
-    # new = gen.forward(images.to(device))
-    #
-    # newdiff = gen.forward(image3.to(device))
-    #
-    # img2 = transforms.ToPILImage()((new[0]))
-    # img3 = transforms.ToPILImage()((newdiff[0]))
-    #
-    #
-    # rows = 1
-    # columns = 3
-    # fig = plt.figure(figsize=(10, 7))
-    # fig.add_subplot(rows, columns, 1)
-    # plt.imshow(img)
-    # plt.title('Original')
-    # fig.add_subplot(rows, columns, 2)
-    # plt.imshow(img2)
-    # plt.title('Generated')
-    # fig.add_subplot(rows, columns, 3)
-    # plt.imshow(img3)
-    # plt.title('new')
-    #
-    #
-    # plt.show()
+
+
+
