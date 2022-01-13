@@ -101,12 +101,19 @@ if __name__ == '__main__':
                 nn.MaxPool2d(kernel_size=2),
                 nn.ReLU(),
                 nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+                nn.MaxPool2d(kernel_size=2),
+                nn.ReLU(),
+                nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
                 nn.ReLU(),
 
                 #Upscale
+                nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm2d(256),
+                nn.ReLU(),
                 nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1),
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
+                nn.Upsample(scale_factor=2),
                 nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
                 nn.BatchNorm2d(64),
                 nn.ReLU(),
@@ -172,7 +179,7 @@ if __name__ == '__main__':
             if i % 500 == 0:
                 print(f'Epoch = {epoch}, I = {i},  Loss: {loss.item()}, Time: {time.time()-start_time}')
 
-    PATH = './Main_Gen1.2_Model_5Epochs_places365_valset_MSVN.pth'
+    PATH = './Main_Gen1.3_Model_5Epochs_places365_valset_JB.pth'
     torch.save(gen.state_dict(), PATH)
 
     GeneratedAB_img = gen(grayscale_copy_of_lab.to(device))
