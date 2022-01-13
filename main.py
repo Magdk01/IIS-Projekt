@@ -20,20 +20,22 @@ if __name__ == '__main__':
 
     start_time = time.time()
 
-    Size = 64
+    Size = 256
     transform = transforms.Compose(
         [
-         transforms.Resize((Size)),
          transforms.RandomHorizontalFlip(),
          transforms.ToTensor(),
 
 
         ])
 
-    batch_size = 8
+    batch_size = 5
 
-    trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                            download=False, transform=transform)
+    # trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+    #                                         download=False, transform=transform)
+
+    trainset = torchvision.datasets.Places365(root='./data', split='val', small=True, download=True, transform=transform)
+
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
                                               shuffle=True, num_workers=2)
     #
@@ -125,7 +127,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(gen.parameters(),lr = learning_rate)
 
 
-    epochs = 20
+    epochs = 1
 
     for epoch in range(epochs):
 
@@ -162,7 +164,7 @@ if __name__ == '__main__':
             if i % 500 == 0:
                 print(f'Epoch = {epoch}, I = {i},  Loss: {loss.item()}, Time: {time.time()-start_time}')
 
-    PATH = './Main_Gen1.1_Model_20Epochs.pth'
+    PATH = './Main_Gen1.1_Model_1Epochs_places365_valset.pth'
     torch.save(gen.state_dict(), PATH)
 
     GeneratedAB_img = gen(grayscale_copy_of_lab.to(device))
