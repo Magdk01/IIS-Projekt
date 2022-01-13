@@ -11,11 +11,14 @@ from PIL import Image
 from skimage.io import imread
 from skimage.color import rgb2lab, lab2rgb
 from torch.nn import BCEWithLogitsLoss
+import os, time
 
 if __name__ == '__main__':
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Using {device} device")
+
+    start_time = time.time()
 
     Size = 64
     transform = transforms.Compose(
@@ -82,6 +85,8 @@ if __name__ == '__main__':
             super().__init__()
             self.model = nn.Sequential(
 
+
+                #Downscale
                 nn.Conv2d(1,16,kernel_size=3,stride=1,padding=1),
                 nn.Conv2d(16,32,kernel_size=3,stride=1,padding=1),
                 nn.MaxPool2d(kernel_size=2),
@@ -92,10 +97,7 @@ if __name__ == '__main__':
                 nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
                 nn.ReLU(),
 
-
-
-
-
+                #Upscale
                 nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
                 nn.BatchNorm2d(64),
                 nn.ReLU(),
@@ -158,9 +160,9 @@ if __name__ == '__main__':
             optimizer.step()
 
             if i % 500 == 0:
-                print(f'Epoch = {epoch}, I = {i},  Loss: {loss.item()}')
+                print(f'Epoch = {epoch}, I = {i},  Loss: {loss.item()}, Time: {time.time()-start_time}')
 
-    PATH = './Main_Gen1_Model_20Epochs.pth'
+    PATH = './Main_Gen1.1_Model_20Epochs.pth'
     torch.save(gen.state_dict(), PATH)
 
     GeneratedAB_img = gen(grayscale_copy_of_lab.to(device))
