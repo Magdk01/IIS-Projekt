@@ -13,6 +13,23 @@ from skimage.color import rgb2lab, lab2rgb
 from torch.nn import BCEWithLogitsLoss
 import os, time
 
+
+
+transform = transforms.Compose(
+        [
+         transforms.RandomHorizontalFlip(),
+         transforms.ToTensor(),
+
+
+        ])
+
+trainset = torchvision.datasets.Places365(root='./data', split='val', small=True, download=False, transform=transform)
+
+# trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+#                                         download=False, transform=transform)
+
+
+
 if __name__ == '__main__':
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -21,35 +38,14 @@ if __name__ == '__main__':
     start_time = time.time()
 
     Size = 256
-    transform = transforms.Compose(
-        [
-         transforms.RandomHorizontalFlip(),
-         transforms.ToTensor(),
 
 
-        ])
+    batch_size = 50
 
-    batch_size = 10
-
-    # trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-    #                                         download=False, transform=transform)
-
-    trainset = torchvision.datasets.Places365(root='./data', split='val', small=True, download=False, transform=transform)
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
                                               shuffle=True, num_workers=2)
-    #
-    # testset = torchvision.datasets.CIFAR10(root='./data', train=False,
-    #                                        download=False, transform=transform)
-    # testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
-    #                                          shuffle=False, num_workers=2)
-    #
-    # classes = ('plane', 'car', 'bird', 'cat',
-    #            'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-    #
-    #
-    #
-    #
+
 
     dataiter = (iter(trainloader))
     images, labels = dataiter.next()
@@ -136,8 +132,8 @@ if __name__ == '__main__':
     learning_rate = 0.001
     gen = Generator().to(device)
 
-    # criterion = nn.L1Loss()
-    criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
+    # criterion = nn.MSELoss()
     # optimizer = torch.optim.SGD(gen.parameters(), lr=learning_rate, momentum=0.5)
     optimizer = torch.optim.Adam(gen.parameters(),lr = learning_rate)
 
@@ -179,7 +175,7 @@ if __name__ == '__main__':
             if i % 500 == 0:
                 print(f'Epoch = {epoch}, I = {i},  Loss: {loss.item()}, Time: {time.time()-start_time}')
 
-    PATH = 'Main_Gen1.3_Model_5Epochs_places365_valset_JB.pth'
+    PATH = 'Main_Gen1.3_Model_5Epochs_L1loss_places365_valset_JB.pth'
     torch.save(gen.state_dict(), PATH)
 
     GeneratedAB_img = gen(grayscale_copy_of_lab.to(device))
