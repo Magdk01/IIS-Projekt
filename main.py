@@ -13,6 +13,21 @@ from skimage.color import rgb2lab, lab2rgb
 from torch.nn import BCEWithLogitsLoss
 import os, time
 
+
+transform = transforms.Compose(
+        [
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+
+        ])
+
+# trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+#                                         download=False, transform=transform)
+
+trainset = torchvision.datasets.Places365(root='./data', split='val', small=True, download=False,
+                                              transform=transform)
+
+
 if __name__ == '__main__':
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -21,20 +36,10 @@ if __name__ == '__main__':
     start_time = time.time()
 
     Size = 256
-    transform = transforms.Compose(
-        [
-         transforms.RandomHorizontalFlip(),
-         transforms.ToTensor(),
 
 
-        ])
+    batch_size = 5
 
-    batch_size = 10
-
-    # trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-    #                                         download=False, transform=transform)
-
-    trainset = torchvision.datasets.Places365(root='./data', split='val', small=True, download=False, transform=transform)
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size,
                                               shuffle=True, num_workers=2)
@@ -60,11 +65,9 @@ if __name__ == '__main__':
     original_set_lab = rgb2lab(original_set_numpy)
     copy_of_lab = np.copy(original_set_lab).astype('float32')
     copy_of_lab = np.transpose(copy_of_lab, (2, 3, 0, 1))
-    grayscale_copy_of_lab = copy_of_lab[:,0]
+    grayscale_copy_of_lab = copy_of_lab[:, 0]
     grayscale_copy_of_lab = torch.from_numpy(grayscale_copy_of_lab.astype('float32'))
-    grayscale_copy_of_lab = torch.unsqueeze(grayscale_copy_of_lab,1)
-
-
+    grayscale_copy_of_lab = torch.unsqueeze(grayscale_copy_of_lab, 1)
 
     fig = plt.figure(figsize=(10, 7))
 
@@ -72,13 +75,13 @@ if __name__ == '__main__':
         fig.add_subplot(3, batch_size, index + 1)
         # plt.title(f'Original{index + 1}')
         plt.axis('off')
-        plt.imshow(original_set_numpy[:,:,index])
+        plt.imshow(original_set_numpy[:, :, index])
 
     for index in range(batch_size):
         fig.add_subplot(3, batch_size, batch_size + index + 1)
         # plt.title(f'GRSC{index+1}')
         plt.axis('off')
-        plt.imshow(original_set_numpy[:,:,index,0],cmap='gray')
+        plt.imshow(original_set_numpy[:, :, index, 0], cmap='gray')
 
 
     class Generator(nn.Module):
@@ -87,30 +90,21 @@ if __name__ == '__main__':
             super().__init__()
             self.model = nn.Sequential(
 
-
-                #Downscale
-                nn.Conv2d(1,16,kernel_size=3,stride=1,padding=1),
-                nn.ReLU(),
-                nn.Conv2d(16,32,kernel_size=3,stride=1,padding=1),
+                # Downsample
+                nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
                 nn.MaxPool2d(kernel_size=2),
                 nn.ReLU(),
                 nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
                 nn.MaxPool2d(kernel_size=2),
                 nn.ReLU(),
                 nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-                nn.MaxPool2d(kernel_size=2),
-                nn.ReLU(),
-                nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
                 nn.ReLU(),
 
-                #Upscale
-                nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1),
-                nn.BatchNorm2d(128),
-                nn.ReLU(),
+                # Upsample
                 nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
                 nn.BatchNorm2d(64),
                 nn.ReLU(),
-                nn.Upsample(scale_factor=2),
                 nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
                 nn.BatchNorm2d(64),
                 nn.ReLU(),
@@ -120,7 +114,7 @@ if __name__ == '__main__':
                 nn.ReLU(),
                 nn.Conv2d(32, 2, kernel_size=3, stride=1, padding=1),
                 nn.Upsample(scale_factor=2)
-                )
+            )
 
         def forward(self, input):
             return self.model(input)
@@ -132,11 +126,10 @@ if __name__ == '__main__':
     # criterion = nn.L1Loss()
     criterion = nn.MSELoss()
     # optimizer = torch.optim.SGD(gen.parameters(), lr=learning_rate, momentum=0.5)
-    optimizer = torch.optim.Adam(gen.parameters(),lr = learning_rate)
+    optimizer = torch.optim.Adam(gen.parameters(), lr=learning_rate)
 
-
-    epochs = 1
-
+    epochs = 10
+    total_loss = 0
     for epoch in range(epochs):
 
         for i, data in enumerate(trainloader):
@@ -149,15 +142,14 @@ if __name__ == '__main__':
             original_set_lab = rgb2lab(original_set_numpy)
             new_set_lab = np.transpose(original_set_lab, (2, 3, 0, 1))
             lab_grayscale = np.copy(new_set_lab)
-            lab_grayscale = lab_grayscale[:,0]
+            lab_grayscale = lab_grayscale[:, 0]
             lab_AB = np.copy(new_set_lab)
-            lab_AB = lab_AB[:,[1,2]]
+            lab_AB = lab_AB[:, [1, 2]]
 
             lab_grayscale = torch.from_numpy(lab_grayscale.astype('float32'))
             lab_grayscale = torch.unsqueeze(lab_grayscale, 1)
 
             lab_target = torch.from_numpy(lab_AB.astype('float32'))
-
 
             optimizer.zero_grad()
 
@@ -169,10 +161,13 @@ if __name__ == '__main__':
 
             optimizer.step()
 
-            if i % 500 == 0:
-                print(f'Epoch = {epoch}, I = {i},  Loss: {loss.item()}, Time: {time.time()-start_time}')
+            total_loss += loss.item()
 
-    PATH = './Main_Gen1.2_Model_5Epochs_places365_valset_MSVN.pth'
+            if i % 500 == 0:
+                print(f'Epoch = {epoch}, I = {i},  Loss: {total_loss / 500}, Time: {time.time() - start_time}')
+                total_loss = 0
+
+    PATH = './Main_Gen1.1_Model_10Epochs_places365_valset_JB.pth'
     torch.save(gen.state_dict(), PATH)
 
     GeneratedAB_img = gen(grayscale_copy_of_lab.to(device))
@@ -180,23 +175,13 @@ if __name__ == '__main__':
     GeneratedAB_img = GeneratedAB_img.cpu()
     GeneratedAB_img = GeneratedAB_img.detach().numpy()
 
-    merged_img = np.concatenate((grayscale_copy_of_lab,GeneratedAB_img), axis=1)
-
+    merged_img = np.concatenate((grayscale_copy_of_lab, GeneratedAB_img), axis=1)
 
     for index in range(batch_size):
-        fig.add_subplot(3, batch_size, batch_size*2 + index + 1)
+        fig.add_subplot(3, batch_size, batch_size * 2 + index + 1)
         # plt.title(f'GRSC{index+1}')
         plt.axis('off')
         img_slice = merged_img[index]
-        print_img = np.transpose(img_slice,(1,2,0))
+        print_img = np.transpose(img_slice, (1, 2, 0))
         plt.imshow(lab2rgb(print_img))
     plt.show()
-
-
-
-
-
-
-
-
-
