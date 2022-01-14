@@ -142,7 +142,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(gen.parameters(),lr = learning_rate)
 
 
-    epochs = 1
+    epochs = 5
 
     for epoch in range(epochs):
 
@@ -179,7 +179,7 @@ if __name__ == '__main__':
             if i % 500 == 0:
                 print(f'Epoch = {epoch}, I = {i},  Loss: {loss.item()}, Time: {time.time()-start_time}')
 
-    PATH = './Main_Gen1.3_Model_5Epochs_places365_valset_JB.pth'
+    PATH = 'Main_Gen1.3_Model_5Epochs_places365_valset_JB.pth'
     torch.save(gen.state_dict(), PATH)
 
     GeneratedAB_img = gen(grayscale_copy_of_lab.to(device))

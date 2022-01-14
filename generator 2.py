@@ -20,13 +20,13 @@ if __name__ == '__main__':
 
 
     #input GRSC image
-    filename = 'landscape2.jpg'
+    filename = 'valheim.JPG'
 
     #Saved weights for the CNN model
     PATH = './Main_Gen1.3_Model_5Epochs_places365_valset_JB.pth'
 
     #Color saturation multiplier
-    ColorSat_Multiplier = 3
+    ColorSat_Multiplier = 1.5
 
 
 
@@ -46,22 +46,36 @@ if __name__ == '__main__':
             super().__init__()
             self.model = nn.Sequential(
 
-                #Downsample
-                nn.Conv2d(1,16,kernel_size=3,stride=1,padding=1),
-                nn.Conv2d(16,32,kernel_size=3,stride=1,padding=1),
+                # Downscale
+                nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
                 nn.MaxPool2d(kernel_size=2),
                 nn.ReLU(),
                 nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
                 nn.MaxPool2d(kernel_size=2),
                 nn.ReLU(),
                 nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+                nn.MaxPool2d(kernel_size=2),
+                nn.ReLU(),
+                nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+                nn.MaxPool2d(kernel_size=2),
+                nn.ReLU(),
+                nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
                 nn.ReLU(),
 
-
-                #Upsample
+                # Upscale
+                nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm2d(256),
+                nn.ReLU(),
+                nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm2d(128),
+                nn.ReLU(),
+                nn.Upsample(scale_factor=2),
                 nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
                 nn.BatchNorm2d(64),
                 nn.ReLU(),
+                nn.Upsample(scale_factor=2),
                 nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
                 nn.BatchNorm2d(64),
                 nn.ReLU(),
@@ -71,7 +85,7 @@ if __name__ == '__main__':
                 nn.ReLU(),
                 nn.Conv2d(32, 2, kernel_size=3, stride=1, padding=1),
                 nn.Upsample(scale_factor=2)
-                )
+            )
 
         def forward(self, input):
             return self.model(input)
@@ -121,19 +135,3 @@ if __name__ == '__main__':
     new_RGB_array = process_image(LAB_array)
 
     display_image_pair(RGB_array, new_RGB_array)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
