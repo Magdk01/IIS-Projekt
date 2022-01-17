@@ -20,13 +20,13 @@ if __name__ == '__main__':
 
 
     #input GRSC image
-    filename = 'landscape2.jpg'
+    filename = 'jacob10.jpg'
 
     #Saved weights for the CNN model
-    PATH = './Main_Gen1.3_Model_5Epochs_places365_valset_JB.pth'
+    PATH = './Main_Gen1.1_Model_20Epochs_places365_valset_JB.pth'
 
     #Color saturation multiplier
-    ColorSat_Multiplier = 3
+    ColorSat_Multiplier = 1
 
 
 
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     Size = 256
     transform = transforms.Compose(
         [transforms.ToTensor(),
-         transforms.Resize((Size, Size))])
+         transforms.Resize((2048, 1536))])
 
     class Generator(nn.Module):
 

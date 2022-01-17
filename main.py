@@ -128,7 +128,7 @@ if __name__ == '__main__':
     # optimizer = torch.optim.SGD(gen.parameters(), lr=learning_rate, momentum=0.5)
     optimizer = torch.optim.Adam(gen.parameters(), lr=learning_rate)
 
-    epochs = 10
+    epochs = 20
     total_loss = 0
     for epoch in range(epochs):
 
@@ -167,7 +167,7 @@ if __name__ == '__main__':
                 print(f'Epoch = {epoch}, I = {i},  Loss: {total_loss / 500}, Time: {time.time() - start_time}')
                 total_loss = 0
 
-    PATH = './Main_Gen1.1_Model_10Epochs_places365_valset_JB.pth'
+    PATH = './Main_Gen1.1_Model_20Epochs_places365_valset_JB.pth'
     torch.save(gen.state_dict(), PATH)
 
     GeneratedAB_img = gen(grayscale_copy_of_lab.to(device))
