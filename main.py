@@ -162,12 +162,12 @@ if __name__ == '__main__':
             epoch_loss += loss.item()
 
             if i % 250 == 0:
-                print(f'Epoch = {epoch}, I = {i},  Loss: {total_loss / 500}, Time: {time.time() - start_time}')
+                print(f'Epoch = {epoch}, I = {i},  Loss: {total_loss / 250}, Time: {time.time() - start_time}')
                 total_loss = 0
-        epoch_loss_list.append(epoch_loss)
+        epoch_loss_list.append(epoch_loss/4700)
         plt.plot(epoch_loss_list)
         plt.xlabel('Epoch')
-        plt.ylabel('Loss')
+        plt.ylabel('Avg. Loss per Iteration')
 
         plt.show()
 
